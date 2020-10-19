@@ -296,3 +296,357 @@ class Solution {
 这个方法不算好。
 
 官方题解中推荐使用BFS或DFS。将在复习了图之后再来看看。
+
+## 98. 验证二叉搜索树
+
+使用中序遍历来获得升序序列，如果二叉搜索树合法，则序列是合法的升序序例，如果不合法，说明二叉搜索树不合法。
+
+垃圾代码，献丑了。
+
+```java
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+class Solution {
+    List<Integer> list = new ArrayList();
+    public boolean isValidBST(TreeNode root) {
+        inorderTraverse(root);
+        Set<Integer> set = new HashSet<>(list);
+        List<Integer> t = new ArrayList<>(set);
+        // List<Integer> t = new ArrayList(list);
+        for(int i=0;i<t.size();i++){
+            for(int j=0;j<=i-1;j++){
+                if(t.get(i) < t.get(j)){
+                    int tmp = t.get(i);
+                    t.set(i,t.get(j));
+                    t.set(j,tmp);
+                }
+            }
+        }
+        if(list.equals(t)) return true;
+        return false;
+    }
+
+    public void inorderTraverse(TreeNode root){
+        if(root == null) return;
+        inorderTraverse(root.left);
+        list.add(root.val);
+        inorderTraverse(root.right);
+    }
+}
+```
+
+第一次修改：将生成一个排好序的序列的做法改为判断是否有不是升序的元素：
+
+```java
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+class Solution {
+    List<Integer> list = new ArrayList();
+    public boolean isValidBST(TreeNode root) {
+        inorderTraverse(root);
+        List<Integer> t = new ArrayList<>(list);
+        for(int i=0;i<t.size();i++){
+            for(int j=0;j<=i-1;j++){
+                if(t.get(i) <= t.get(j)){	//由 < 变为 <= 以包含元素相等情况
+                    return false;		//出现一种则说明 不是升序序列
+                }
+            }
+        }
+        return true;
+    }
+
+    public void inorderTraverse(TreeNode root){
+        if(root == null) return;
+        inorderTraverse(root.left);
+      	
+        list.add(root.val);
+        inorderTraverse(root.right);
+    }
+
+    
+}
+```
+
+第二次修改：将是否为升序的判断放在遍历中：
+
+```java
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+class Solution {
+    List<Integer> list = new ArrayList();
+    boolean result = true;
+    public boolean isValidBST(TreeNode root) {
+        inorderTraverse(root);
+        return result;
+    }
+
+    public void inorderTraverse(TreeNode root){
+        if(root == null) return;
+        inorderTraverse(root.left);
+        if(list.size() > 0 ){
+            if(root.val <= list.get(list.size()-1)){
+                result = false;
+            }
+        }
+        list.add(root.val);
+        inorderTraverse(root.right);
+    }
+}
+```
+
+遗憾就是就算知道了result == false，程序也无法结束。可以考虑使用非递归形式的中序遍历来做。
+
+
+
+
+
+官方题解：
+
+📖 文字题解
+方法一: 递归
+
+思路和算法
+
+要解决这道题首先我们要了解二叉搜索树有什么性质可以给我们利用，由题目给出的信息我们可以知道：如果该二叉树的左子树不为空，则左子树上所有节点的值均小于它的根节点的值； 若它的右子树不空，则右子树上所有节点的值均大于它的根节点的值；它的左右子树也为二叉搜索树。
+
+这启示我们设计一个递归函数 `helper(root, lower, upper)` 来递归判断，函数表示考虑以 root 为根的子树，判断子树中所有节点的值是否都在 `(l,r)`的范围内（注意是开区间）。如果 root 节点的值 val 不在`(l,r)`的范围内说明不满足条件直接返回，否则我们要继续递归调用检查它的左右子树是否满足，如果都满足才说明这是一棵二叉搜索树。
+
+那么根据二叉搜索树的性质，在递归调用左子树时，我们需要把上界 upper 改为 root.val，即调用 `helper(root.left, lower, root.val)`，因为左子树里所有节点的值均小于它的根节点的值。同理递归调用右子树时，我们需要把下界 lower 改为 root.val，即调用 `helper(root.right, root.val, upper)`。
+
+函数递归调用的入口为 `helper(root, -inf, +inf)`， inf 表示一个无穷大的值。
+
+C++:
+
+```C++
+class Solution {
+public:
+    bool helper(TreeNode* root, long long lower, long long upper) {
+        if (root == nullptr) {
+            return true;
+        }
+        if (root -> val <= lower || root -> val >= upper) {
+            return false;
+        }
+        return helper(root -> left, lower, root -> val) && helper(root -> right, root -> val, upper);
+    }
+    bool isValidBST(TreeNode* root) {
+        return helper(root, LONG_MIN, LONG_MAX);
+    }
+};
+```
+
+
+
+方法二：中序遍历
+思路和算法
+
+基于方法一中提及的性质，我们可以进一步知道二叉搜索树「中序遍历」得到的值构成的序列一定是升序的，这启示我们在中序遍历的时候实时检查当前节点的值是否大于前一个中序遍历到的节点的值即可。如果均大于说明这个序列是升序的，整棵树是二叉搜索树，否则不是，下面的代码我们使用栈来模拟中序遍历的过程。
+
+可能由读者不知道中序遍历是什么，我们这里简单提及一下，中序遍历是二叉树的一种遍历方式，它先遍历左子树，再遍历根节点，最后遍历右子树。而我们二叉搜索树保证了左子树的节点的值均小于根节点的值，根节点的值均小于右子树的值，因此中序遍历以后得到的序列一定是升序序列。
+
+![](./img/98_fig1.gif)
+
+C++:
+
+```C++
+class Solution {
+public:
+    bool isValidBST(TreeNode* root) {
+        stack<TreeNode*> stack;
+        long long inorder = (long long)INT_MIN - 1;
+
+        while (!stack.empty() || root != nullptr) {
+            while (root != nullptr) {
+                stack.push(root);
+                root = root -> left;
+            }
+            root = stack.top();
+            stack.pop();
+            // 如果中序遍历得到的节点的值小于等于前一个 inorder，说明不是二叉搜索树
+            if (root -> val <= inorder) {
+                return false;
+            }
+            inorder = root -> val;
+            root = root -> right;
+        }
+        return true;
+    }
+};
+```
+
+## 783. 二叉搜索树节点最小距离
+
+使用了中序遍历出序列结果然后挨个相减，最后取出最小值。程序在数很大时会出错。
+
+垃圾代码，献丑了。
+
+```java
+class Solution {
+    List<Integer> list = new ArrayList();
+    public int min(List<Integer> list){	//找出最小数
+        int m = list.get(0);
+        for(int i=0;i<list.size();i++){
+            if(list.get(i) < m){
+                m = list.get(i);
+            }
+        }
+        return m;
+    }
+    public int minDiffInBST(TreeNode root) {
+        inorderTraverse(root);
+        for(int i=0;i<list.size()-1;i++){
+            list.set(i,list.get(i+1) - list.get(i));
+        }
+        list.set(list.size()-1,10000000);	//埋下隐患
+        // System.out.println(list);
+
+        return min(list);
+    }
+
+    public void inorderTraverse(TreeNode root){
+        if(root == null) return;
+        inorderTraverse(root.left);
+        list.add(root.val);
+        inorderTraverse(root.right);
+    }
+
+}
+```
+
+官方题解：
+
+#### 方法一：排序【通过】
+
+**思路和算法**
+
+将树中所有节点的值写入数组，之后将数组排序。依次计算相邻数之间的差值，找出其中最小的值。
+
+Java：
+
+```java
+class Solution {
+    List<Integer> vals;
+    public int minDiffInBST(TreeNode root) {
+        vals = new ArrayList();
+        dfs(root);
+        Collections.sort(vals);
+
+        int ans = Integer.MAX_VALUE;
+        for (int i = 0; i < vals.size() - 1; ++i)
+            ans = Math.min(ans, vals.get(i+1) - vals.get(i));
+
+        return ans;
+    }
+
+    public void dfs(TreeNode node) {
+        if (node == null) return;
+        vals.add(node.val);
+        dfs(node.left);
+        dfs(node.right);
+    }
+}
+```
+
+#### 方法二：中序遍历【通过】
+
+**思路和算法**
+
+在二叉搜索树中，中序遍历会将树中节点按数值大小顺序输出。只需要遍历计算相邻数的差值，取其中最小的就可以了。
+
+```java
+class Solution {
+    Integer prev, ans;
+    public int minDiffInBST(TreeNode root) {
+        prev = null;
+        ans = Integer.MAX_VALUE;
+        dfs(root);
+        return ans;
+    }
+
+    public void dfs(TreeNode node) {
+        if (node == null) return;
+        dfs(node.left);
+        if (prev != null)
+            ans = Math.min(ans, node.val - prev);
+        prev = node.val;
+        dfs(node.right);
+    }
+}
+```
+
+## 844. 比较含退格的字符串
+
+使用了一个栈的结构来处理字符串。当遇到退格符号`'#'`时，将栈顶元素出栈。另外，如果栈空了还进行出栈的话，会出错。所以先判断是否当前栈为空。
+
+```java
+class KMStack{
+    List<Character> characters = new ArrayList<>();
+    public void push(Character c){
+        characters.add(c);
+    }
+    public Character pop(){
+        if(characters.isEmpty()){
+            return ' ';
+        }
+        Character result =  characters.get(characters.size()-1);
+        characters.remove(characters.size()-1);
+        return result;
+    }
+    public String charToString(){
+        StringBuilder result = new StringBuilder();
+        for(Character c:characters){
+            result.append(c);
+        }
+        return result.toString();
+    }
+}
+class Solution {
+    public boolean backspaceCompare(String S, String T) {
+        
+        KMStack sStack = new KMStack();
+        KMStack tStack = new KMStack();
+        String s = S;
+        String t = T;
+        char []cs = s.toCharArray();
+        char []ct = t.toCharArray();
+        for(char i:cs){
+            if(i == '#'){
+                sStack.pop();
+                continue;
+            }
+            sStack.push(i);
+
+        }
+        for(char i:ct){
+            if(i == '#'){
+                tStack.pop();
+                continue;
+            }
+            tStack.push(i);
+        }
+        return sStack.charToString().equals(tStack.charToString());
+    }
+}
+```
+
