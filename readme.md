@@ -595,6 +595,10 @@ class Solution {
 }
 ```
 
+
+
+# 每日挑战
+
 ## 844. 比较含退格的字符串
 
 使用了一个栈的结构来处理字符串。当遇到退格符号`'#'`时，将栈顶元素出栈。另外，如果栈空了还进行出栈的话，会出错。所以先判断是否当前栈为空。
@@ -646,6 +650,45 @@ class Solution {
             tStack.push(i);
         }
         return sStack.charToString().equals(tStack.charToString());
+    }
+}
+```
+
+## 925. 长键按入
+
+
+
+我的思路是使用指针。一共使用了三个指针：
+
+* 第一个指针nstart是用于表示 name对应的n数组中的元素
+* 第二个指针t1用于表示 t2指针所指向元素前一个元素
+* 第三个指针t2用于表示 typed对应的t数组中的元素
+
+```java
+class Solution {
+    public boolean isLongPressedName(String name, String typed) {
+        if(name.length() > typed.length()) return false;	//如果typed的长度都小于name，那一定不对
+        char []n = name.toCharArray();
+        char []t = typed.toCharArray();
+        int nstart = 0;
+        int t1 = 0;
+        int t2 = 0;
+        if(t1!=t.length && nstart != n.length){
+            if(n[0]!=t[0]) return false;
+        }
+        while(t2!=t.length){
+            if(nstart<n.length && n[nstart] == t[t2]){	//两个数组对应元素相等时，nstart和t2指针同时往后移动一位
+                nstart++;
+                t2++;
+            }else if(t[t1] == t[t2]){
+                t2++;
+            }else{
+                break;
+            }
+            t1 = t2-1;	//保持 t1指针指向t2前一位
+        }
+
+        return t2 == t.length && nstart == n.length;
     }
 }
 ```
