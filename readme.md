@@ -693,3 +693,44 @@ class Solution {
 }
 ```
 
+## 100. 相同的树
+
+我的思路比较奇特。一看到这道题首先想到的是 相同的树的前序、中序或中序、后序遍历都相同就行。所以我就先写了两个遍历，然后判断生成的序列是否相同。额，看题解别人都用的什么递归、BFS，DFS，有点汗颜。。。
+
+垃圾代码，献丑了。
+
+```java
+class Solution {
+    public List<Integer> pre1 = new ArrayList();
+    public List<Integer> in1 = new ArrayList();
+    public List<Integer> pre2 = new ArrayList();
+    public List<Integer> in2 = new ArrayList();
+    public void preOrderTraverse(TreeNode root,List<Integer> pre){
+        if(root == null){
+            pre.add(null);
+            return;
+        }
+        pre.add(root.val);
+        preOrderTraverse(root.left,pre);
+        preOrderTraverse(root.right,pre);
+    }
+    public void inOrderTraverse(TreeNode root,List<Integer> in){
+        if(root == null){
+            in.add(null);
+            return;
+        }
+        inOrderTraverse(root.left,in);
+        in.add(root.val);
+        inOrderTraverse(root.right,in);
+    }
+    
+    public boolean isSameTree(TreeNode p, TreeNode q) {
+        preOrderTraverse(p,pre1);
+        inOrderTraverse(p,in1);
+        preOrderTraverse(q,pre2);
+        inOrderTraverse(q,in2);
+        return pre1.equals(pre2) && in1.equals(in2);
+    }
+}
+```
+
